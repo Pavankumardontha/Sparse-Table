@@ -1,0 +1,92 @@
+#include<bits/stdc++.h>
+#include<iostream>
+using namespace std;
+
+/* 
+no of rows = n and no. of columns= floor(logn)+1 
+each interval is of the length 2^(j).
+Every number can we written as sum of powers of 2.In the same way,any interval length can 
+be spilt into interval lengths of sum of powers of 2.
+
+t[i][j] = answer on interval [i,i+2^(j)-1]  
+For arrays with reasonable length (≤10^7 elements), no. of columns=25 is a good value.
+Because the range [i,i+2^(j)−1] of length 2^(j) splits nicely into the ranges [i,i+2^(j−1)−1]
+and [i+2^(j−1),i+2^(j)−1], both of length 2^(j)−1, we can generate the table efficiently 
+using dynamic programming.
+
+ex : t[2][3] = [2,2+8-1]=[2,9]=length of interval = 8 now this can be splitted into 2 intervals
+for which we already knew the answer 
+t[2][3]= [2,9] = [2,5] + [6,9] 
+let f be our function f=min/max then 
+t[2][3] = f([2,9]) = f(f([2,5]) + f([6,9]))
+t[i][j] = f(t[i][j-1] + t[i+2^(j-1)][j-1] 
+so to compute t[i][j] we need entire t[i][j-1] column values 
+
+time complexity analysis: 
+for precomputation, it is O(NlogN) and for answering each query it is O(LogN)
+Space complexity: 
+this needs O(NlogN) space complexity. We have N rows and logN columns 
+
+note: 
+left shift:
+N = N<<4 implies N=N*2^(4)
+N = N<<a implies N=N*2^(a)
+
+Lets now think how to answer a range minimum query [l,r] l and r both included
+length of the interval = r-l+1
+
+*/
+
+int a[100001];
+int n;
+int st[1001][25]; //sparse table
+void min_sparse()  //we can also implement the max function in the same way 
+{
+    for(int i=0;i<n;i++)
+    for(int j=0;j<=25;j++)
+    st[i][j]=INT_MAX;
+    
+    for(int i=0;i<n;i++)
+    st[i][0] = a[i];      //this represents value on interval of size 1
+    
+    int m = floor(log2(n)) + 1; //no of columns(no. of possible values of j)
+    /* if the length of the input array is 17 the maximum 2^(j) length is 16 and hence
+    j can take maximum value of 4.floor(log17)+1 = 5 and hence j=0,1,2,3,4 are possible
+    values.
+    */
+    for(int j=1;j<m;j++)
+    {
+        for(int i=0;(i+(1<<j)-1)<n;i++)
+        st[i][j] = min(st[i][j-1],st[i+(1<<(j-1))][j-1]);
+    }
+}
+
+int query(int l,int r)
+{
+    int len = r-l+1;
+    if(len==1)
+    return st[l][0];
+    //the maximum value of j such that 2^(j)<=length of the present interval is log(len)
+    int maxj = log2(len);
+    return min(st[l][maxj],query(l+(1<<maxj),r));
+}
+int main()
+{
+    cin>>n;
+    for(int i=0;i<n;i++)
+    cin>>a[i];
+    min_sparse();
+    int q;
+    cin>>q;
+    int val;
+    int l;
+    int r;
+    
+    for(int i=0;i<q;i++)
+    {
+        cin>>l>>r;
+        val = query(l,r);
+        cout<<val<<" ";
+    }
+    cout<<endl;
+}
